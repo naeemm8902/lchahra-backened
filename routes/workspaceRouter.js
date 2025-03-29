@@ -1,6 +1,8 @@
 import express from 'express';
+import { isAuthenticated } from '../middleware/authMiddleware.js';
 import {
     createWorkspace,
+    getUserWorkspaces,
     getWorkspaces,
     getWorkspaceById,
     updateWorkspace,
@@ -11,7 +13,12 @@ import {
 const workspaceRouter = express.Router();
 
 // Routes for workspaces
-workspaceRouter.post('/', createWorkspace); // Create a new workspace
+workspaceRouter.post('/', isAuthenticated,createWorkspace); // Create a new workspace
+workspaceRouter.get('/my-workspaces', isAuthenticated, getUserWorkspaces); // Get workspaces for the authenticated user
+
+
+
+// not used yet
 workspaceRouter.get('/', getWorkspaces); // Get all workspaces
 workspaceRouter.get('/:id', getWorkspaceById); // Get a workspace by ID
 workspaceRouter.put('/:id', updateWorkspace); // Update a workspace

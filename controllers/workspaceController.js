@@ -3,14 +3,31 @@ import Workspace from "../models/workspaceModel.js";
 // Create a new workspace
 export const createWorkspace = async (req, res) => {
     try {
-        const { name, description, members, owner } = req.body;
-        const workspace = new Workspace({ name, description, members, owner });
+        console.log(req.user)
+        const { name, description} = req.body;
+        const workspace = new Workspace({ name, description, owner:req.user._id });
         await workspace.save();
         res.status(201).json({ success: true, workspace });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const getUserWorkspaces = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const myWorkspaces = await Workspace.find({ owner: userId })
+            .populate('owner', 'name email')
+            .populate('members.userId', 'name email')
+       
+        const guestWorkSpace = await Workspace.find({ members: { $elemMatch: { userId } } })
+        .populate('owner', 'name email')
+        .populate('members.userId', 'name email')
+            res.status(200).json({ success: true, myWorkspaces ,guestWorkSpace });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
 
 // Get all workspaces
 export const getWorkspaces = async (req, res) => {
