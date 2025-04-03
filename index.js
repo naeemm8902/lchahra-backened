@@ -4,6 +4,7 @@ import usersRouter from './routes/userRouter.js';
 import cors from 'cors';
 import workspaceRouter from './routes/workspaceRouter.js';
 import { authenticateUser } from './middleware/authMiddleware.js';
+import invitationRoutes from './routes/invitationRoutes.js'
 const app = express();
 const port = 4001;
 
