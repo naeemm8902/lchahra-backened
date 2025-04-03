@@ -16,6 +16,7 @@ app.use(cors({
 app.use(authenticateUser);
 app.use('/api/users', usersRouter);
 app.use('/api/workspace', workspaceRouter);
+app.use("/api/invitations", invitationRoutes);
 
 
 connectToMongo(port);
