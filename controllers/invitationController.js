@@ -1,4 +1,4 @@
-import InvitationToWorkspace from "../models/invitationToWorkSpaceModel.js";
+import InvitationToWorkspace from "../models/InvitationToWorkspace.js";
 
 // 📌 Send an invitation
 export const sendInvitation = async (req, res) => {

@@ -155,7 +155,7 @@ const sendLoginCode = async (req, res) => {
       <p>your Activation code is : <strong>${code}</strong></p>
       `;
 
-      await sendMail(to, subject, text, html);
+      // await sendMail(to, subject, text, html);
       console.log(code);
     } catch (error) {
       console.error('Error occurred while sending email:', error);
