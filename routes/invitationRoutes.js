@@ -15,7 +15,7 @@ const router = express.Router();
 router.post('/send', isAuthenticated, sendInvitation); // Send an invitation
 
 // 📌 Routes un used
-router.get("/", getAllInvitations); // Get all invitations
+router.get("/get", getAllInvitations); // Get all invitations
 router.put("/accept/:id", acceptInvitation); // Accept an invitation
 router.put("/reject/:id", rejectInvitation); // Reject an invitation
 router.delete("/:id", deleteInvitation); // Delete an invitation
