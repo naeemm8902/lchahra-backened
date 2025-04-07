@@ -6,11 +6,15 @@ import {
   rejectInvitation,
   deleteInvitation,
 } from "../controllers/invitationController.js";
+import { isAuthenticated } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// 📌 Routes
-router.post("/send", sendInvitation); // Send an invitation
+
+// 📌 Routes used 
+router.post('/send', isAuthenticated, sendInvitation); // Send an invitation
+
+// 📌 Routes un used
 router.get("/", getAllInvitations); // Get all invitations
 router.put("/accept/:id", acceptInvitation); // Accept an invitation
 router.put("/reject/:id", rejectInvitation); // Reject an invitation
