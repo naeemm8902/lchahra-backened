@@ -96,6 +96,16 @@ export const getAllInvitations = async (req, res) => {
     res.status(500).json({ message: "Server error.", error: error.message });
   }
 };
+// 📌 Get invitations by user ID (jalal is working on it)
+export const getInvitationsByUserId = async (req, res) => {
+  try {
+    const userId = req.user._id; // Assuming you have user ID from the request
+    const invitations = await InvitationToWorkspace.find({ invitedBy: userId }).populate("invitedBy", "name email").populate("invitedWorkspace", "name");
+    res.status(200).json(invitations);
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
 
 // 📌 Accept an invitation
 export const acceptInvitation = async (req, res) => {
