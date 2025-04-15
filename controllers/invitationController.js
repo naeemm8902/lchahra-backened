@@ -1,4 +1,5 @@
 import InvitationToWorkspace from "../models/InvitationToWorkspace.js";
+import Workspace from "../models/workspaceModel.js";
 
 // 📌 Send an invitation 
 // export const sendInvitation = async (req, res) => {
@@ -96,6 +97,16 @@ export const getAllInvitations = async (req, res) => {
     res.status(500).json({ message: "Server error.", error: error.message });
   }
 };
+// 📌 Get invitations by user ID (jalal is working on it)
+export const getInvitationsByUserId = async (req, res) => {
+  try {
+    const userId = req.user._id; // Assuming you have user ID from the request
+    const invitations = await InvitationToWorkspace.find({ invitedBy: userId }).populate("invitedBy", "name email").populate("invitedWorkspace", "name");
+    res.status(200).json(invitations);
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
 
 // 📌 Accept an invitation
 export const acceptInvitation = async (req, res) => {
@@ -106,9 +117,16 @@ export const acceptInvitation = async (req, res) => {
     if (!invitation) {
       return res.status(404).json({ message: "Invitation not found." });
     }
-
+    console.log(req.user._id)
+    await Workspace.findOneAndUpdate(
+      { _id: invitation.invitedWorkspace },
+      { $push: { members: {userId: req.user._id, role:"member" }} }
+    );
     invitation.status = "accepted";
     await invitation.save();
+
+   
+    
     res.status(200).json({ message: "Invitation accepted.", invitation });
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });
@@ -149,3 +167,15 @@ export const deleteInvitation = async (req, res) => {
     res.status(500).json({ message: "Server error.", error: error.message });
   }
 };
+
+export const getJoinRequest = async (req, res) =>{
+  // console.log('hello from join request')
+  try {
+    const invitations = await InvitationToWorkspace.find({email:req.user.email}).sort({created:-1})
+    return res.status(200).json(invitations)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({message: " internal server error"})
+  }
+
+}
