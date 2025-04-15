@@ -20,8 +20,9 @@ const workspaceSchema = new mongoose.Schema({
         role: {
             type: String,
             enum: ['member', 'collaborator'],
+            default: 'member',
             required: true
-        }
+          }
     }],
     owner: {
         type: mongoose.Schema.Types.ObjectId,
