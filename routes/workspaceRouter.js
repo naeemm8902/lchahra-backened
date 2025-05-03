@@ -15,12 +15,12 @@ const workspaceRouter = express.Router();
 // Routes for workspaces
 workspaceRouter.post('/', isAuthenticated,createWorkspace); // Create a new workspace
 workspaceRouter.get('/my-workspaces', isAuthenticated, getUserWorkspaces); // Get workspaces for the authenticated user
+workspaceRouter.get('my-workspces/:id',isAuthenticated ,getWorkspaceById); // Get a workspace by ID
 
 
 
 // not used yet
 workspaceRouter.get('/', getWorkspaces); // Get all workspaces
-workspaceRouter.get('/:id', getWorkspaceById); // Get a workspace by ID
 workspaceRouter.put('/:id', updateWorkspace); // Update a workspace
 workspaceRouter.delete('/:id', deleteWorkspace); // Delete a workspace
 workspaceRouter.post('/:id/members', addMemberToWorkspace); // Add a member to a workspace
