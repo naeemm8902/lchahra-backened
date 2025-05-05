@@ -128,7 +128,7 @@ const sendLoginCode = async (req, res) => {
       const accessToken = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET,
-        { expiresIn: '15m' },
+        { expiresIn: '8h' },
       );
       const refreshToken = jwt.sign(
         { userId: user._id, name: user.name },
