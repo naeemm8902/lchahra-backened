@@ -1,10 +1,11 @@
-import projectModel from "../models/ProjectModel";
-import columnModel from "../models/columnModel";
-import cardModel from "../models/cardModel";
+import projectModel from "../models/ProjectModel.js";
+import columnModel from "../models/columnModel.js";
+import cardModel from "../models/cardModel.js";
 
 export const createNewProject = async (req,res)=>{
     // res.status(201).json({message:'working on it'})
     try {
+      console.log(req.body)
         const {projectName,projectWorkspaceId} = req.body;
   const createdProject = await projectModel.create({
             projectName,
@@ -13,6 +14,7 @@ export const createNewProject = async (req,res)=>{
         })
         res.status(201).json(createdProject)
     } catch (error) {
+      console.log(error)
         res.status(500).json({message:"Internal Server Error"})
     }
 }
@@ -52,7 +54,7 @@ export const listUserProjects = async (req, res) => {
     try {
       const userId = req.user._id; // assuming user info is stored in req.user by isAuthenticated middleware
   
-      const projects = await projectModel.find({ members: userId })
+      const projects = await projectModel.find({})
         .populate('projectWorkspaceId')
         .populate('columnOrder')
         .populate('members', 'name email') // optionally limit fields

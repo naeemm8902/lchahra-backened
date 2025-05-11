@@ -5,6 +5,7 @@ import cors from 'cors';
 import workspaceRouter from './routes/workspaceRouter.js';
 import { authenticateUser } from './middleware/authMiddleware.js';
 import invitationRoutes from './routes/invitationRoutes.js'
+import projectRoutes from './routes/projectRoutes.js'
 const app = express();
 const port = 4001;
 
@@ -18,6 +19,7 @@ app.use(authenticateUser);
 app.use('/api/users', usersRouter);
 app.use('/api/workspace', workspaceRouter);
 app.use("/api/invitations", invitationRoutes);
+app.use("/api/project", projectRoutes);
 
 
 connectToMongo(port);
