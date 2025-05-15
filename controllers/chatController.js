@@ -39,27 +39,63 @@ export const getOrCreatePrivateChat = async (req, res) => {
       });
     }
 
-    // Create query object to find existing chat
-    const query = {
-      isGroup: false,
-      members: { $all: [userId1, userId2] },
-      workspaceId: workspaceId // Added workspaceId to the query
-    };
-
-    console.log("Final query:", query); // Log the query for debugging
-
-    let chat = await Chat.findOne(query);
+    // CRITICAL: Before anything else, check if there are any existing chats
+    // Get all chats for this user to check for duplicates
+    console.log(`First checking ALL existing chats for user: ${userId1}`);
+    const userChats = await Chat.find({ members: userId1 });
+    console.log(`Found ${userChats.length} total chats for user ${userId1}`);
+    
+    // Extract workspace ID from either direct workspaceId or workspace object
+    const effectiveWorkspaceId = workspaceId || (workspace && workspace._id);
+    const workspaceIdString = effectiveWorkspaceId ? effectiveWorkspaceId.toString() : null;
+    
+    console.log('Effective workspace ID:', workspaceIdString);
+    
+    // Look through existing chats to find one for this workspace
+    let chat = null;
     let isNewChat = false;
-
-    if (!chat) {
+    
+    if (workspaceIdString && userChats.length > 0) {
+      // Try to find a matching chat for this workspace
+      for (const existingChat of userChats) {
+        // Check workspaceId field (string comparison)
+        if (existingChat.workspaceId && existingChat.workspaceId.toString() === workspaceIdString) {
+          chat = existingChat;
+          console.log(`MATCH FOUND: Chat ${existingChat._id} has matching workspaceId`);
+          break;
+        }
+        
+        // Check workspace._id field if it exists (string comparison)
+        if (existingChat.workspace && existingChat.workspace._id && 
+            existingChat.workspace._id.toString() === workspaceIdString) {
+          chat = existingChat;
+          console.log(`MATCH FOUND: Chat ${existingChat._id} has matching workspace._id`);
+          break;
+        }
+      }
+    }
+    
+    // If we found a matching chat, use it
+    if (chat) {
+      console.log('Using existing chat for this workspace:', chat._id);
+      // Make sure it has the latest workspace data
+      if (workspace && (!chat.workspace || chat.workspace._id.toString() !== workspaceIdString)) {
+        console.log('Updating workspace data for existing chat');
+        chat.workspace = workspace;
+        await chat.save();
+      }
+    } else {
+      // No existing chat found, create a new one
+      console.log('No existing chat found in this workspace, creating new one...');
+      
       // Create chat data with both workspaceId and workspace
       const chatData = {
         isGroup: false,
         members: [userId1, userId2],
-        workspaceId: workspaceId, // Ensure workspaceId is added
-        workspace: workspace // Ensure workspace is added
+        workspaceId: effectiveWorkspaceId,
+        workspace: workspace
       };
-
+      
       chat = await Chat.create(chatData);
       isNewChat = true;
       console.log('New chat created with ID:', chat._id);

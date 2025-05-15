@@ -23,6 +23,11 @@ const messageSchema = new Schema(
     attachment: {
       type: String, // URL or file path to the attachment
     },
+    // Track if message has been edited
+    isEdited: {
+      type: Boolean,
+      default: false
+    },
   },
   { timestamps: true }
 );
