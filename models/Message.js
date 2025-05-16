@@ -4,6 +4,10 @@ const { Schema } = mongoose;
 
 const messageSchema = new Schema(
   {
+    chatname: {
+      type: String,
+      default: '',
+    },
     chat: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Chat', // Reference to the Chat model

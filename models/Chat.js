@@ -4,6 +4,10 @@ const { Schema } = mongoose;
 
 const chatSchema = new Schema(
   {
+    chatname: {
+      type: String,
+      default: '',
+    },
     isGroup: {
       type: Boolean,
       required: true,
@@ -38,7 +42,7 @@ const chatSchema = new Schema(
       ref: 'Workspace',
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Chat = mongoose.model('Chat', chatSchema);

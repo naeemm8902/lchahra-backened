@@ -9,7 +9,7 @@ export const getOrCreatePrivateChat = async (req, res) => {
     console.log('req.body:', req.body);
 
     let userId1, userId2;
-    const { members, workspaceId, workspace } = req.body;
+    const {chatname, members, workspaceId, workspace } = req.body;
 
     if (Array.isArray(members) && members.length > 0) {
       userId1 = members[0];
@@ -93,7 +93,8 @@ export const getOrCreatePrivateChat = async (req, res) => {
         isGroup: false,
         members: [userId1, userId2],
         workspaceId: effectiveWorkspaceId,
-        workspace: workspace
+        workspace: workspace,
+        chatname: chatname
       };
       
       chat = await Chat.create(chatData);
@@ -113,8 +114,9 @@ export const getOrCreatePrivateChat = async (req, res) => {
           // Create welcome message directly using the Message model
           const welcomeMessage = {
             chat: chat._id,
-            sender: userId1, // Use the first user as sender
-            content: 'Welcome to your chat in Lchahra Workspace! This is your space for conversations and notes.'
+            sender: userId1,
+            content: `Welcome to your chat "${chat.chatname || 'Lchahra Workspace'}"! This is your space for conversations and notes.`,
+            chatname: chat.chatname || '', 
           };
           
           // Save the welcome message
@@ -136,6 +138,7 @@ export const getOrCreatePrivateChat = async (req, res) => {
       members: chat.members,
       workspaceId: chat.workspaceId || null, // return workspaceId
       workspace: chat.workspace || null, // return workspace
+      chatname: chat.chatname,
       createdAt: chat.createdAt,
       updatedAt: chat.updatedAt
     });

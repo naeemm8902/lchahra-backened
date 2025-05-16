@@ -13,8 +13,8 @@ export const getChatMessages = async (req, res) => {
 // Send a message
 export const sendMessage = async (req, res) => {
   try {
-    const { chatId, senderId, content } = req.body;
-    const message = await Message.create({ chat: chatId, sender: senderId, content });
+    const { chatId, senderId, content, chatname } = req.body;
+    const message = await Message.create({ chat: chatId, sender: senderId, content, chatname });
     const populated = await message.populate('sender', 'name');
     res.json(populated);
   } catch (error) {
