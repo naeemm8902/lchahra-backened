@@ -5,7 +5,18 @@ export const createWorkspace = async (req, res) => {
     try {
         console.log(req.user)
         const { name, description} = req.body;
-        const workspace = new Workspace({ name, description, owner:req.user._id });
+        // const workspace = new Workspace({ name, description, owner:req.user._id });
+        const workspace = new Workspace({
+            name,
+            description,
+            owner: req.user._id,
+            members: [
+              {
+                userId: req.user._id,
+                role: 'owner', 
+              },
+            ],
+          });
         await workspace.save();
         res.status(201).json({ success: true, workspace });
     } catch (error) {
@@ -106,3 +117,20 @@ export const removeMemberFromWorkspace = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+// In workspaceController.js (create this function)
+export const getMembersByWorkspaceId = async (req, res) => {
+    const { id } = req.params;
+  
+    try {
+      const workspace = await Workspace.findById(id).populate('members'); // Assuming "members" is an array of User references
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+      console.log("wrospace members are",workspace.members)
+  
+      res.json(workspace.members); // Return list of users
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error });
+    }
+  };
+      
