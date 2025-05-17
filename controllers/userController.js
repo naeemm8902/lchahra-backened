@@ -108,45 +108,42 @@ const sendLoginCode = async (req, res) => {
   }
   try {
     const user = await UserModel.findOne({ email });
-    console.log('user is ', user);
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log('isMatch is ', isMatch);
+
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
+    // const existingToken = await VerificationCodeModel.findOne({
+    //   userId: user._id,
+    //   isUsed: true,
+    //   expiresAt: { $gt: new Date() },
+    // });
 
-    const existingToken = await VerificationCodeModel.findOne({
-      userId: user._id,
-      isUsed: true,
-      expiresAt: { $gt: new Date() },
-    });
+    // if (existingToken) {
+    //   const accessToken = jwt.sign(
+    //     { userId: user._id },
+    //     process.env.JWT_SECRET,
+    //     { expiresIn: '8h' },
+    //   );
+    //   const refreshToken = jwt.sign(
+    //     { userId: user._id, name: user.name },
+    //     process.env.JWT_SECRET,
+    //     { expiresIn: '8h' },
+    //   );
 
-    if (existingToken) {
-      const accessToken = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: '8h' },
-      );
-      const refreshToken = jwt.sign(
-        { userId: user._id, name: user.name },
-        process.env.JWT_SECRET,
-        { expiresIn: '8h' },
-      );
-
-      return res.status(200).json({
-        message: 'Logged in successfully.',
-        accessToken,
-        refreshToken,
-        user,
-      });
-    }
+    //   return res.status(200).json({
+    //     message: 'Logged in successfully.',
+    //     accessToken,
+    //     refreshToken,
+    //     user,
+    //   });
+    // }
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     try {
-      console.log('signup code is ', code);
       const to = email;
       const subject = 'Lachahra Activation Code';
       const text = 'Emai';
@@ -199,7 +196,6 @@ const loginWithCode = async (req, res) => {
     if (!verificationEntry) {
       return res.status(401).json({ message: 'Invalid or expired code.' });
     }
-
     const user = await UserModel.findById(verificationEntry.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
@@ -215,8 +211,8 @@ const loginWithCode = async (req, res) => {
       { expiresIn: '8h' },
     );
 
-    await VerificationCodeModel.findByIdAndUpdate(verificationEntry._id, {
-      isUsed: true,
+    await VerificationCodeModel.updateMany({userId:verificationEntry.userId , isUsed:false}, {
+      $set:{isUsed: true},
     });
 
     // Update user verification status and store refresh token
