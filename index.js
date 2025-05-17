@@ -24,6 +24,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/workspace', workspaceRouter);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/project', projectRoutes);
+
 // making routes for chat and message
 app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);

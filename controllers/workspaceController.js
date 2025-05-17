@@ -1,4 +1,6 @@
 import Workspace from "../models/workspaceModel.js";
+import Chat from "../models/Chat.js";
+import Message from '../models/Message.js';
 
 // Create a new workspace
 export const createWorkspace = async (req, res) => {
@@ -18,6 +20,28 @@ export const createWorkspace = async (req, res) => {
             ],
           });
         await workspace.save();
+
+        // Automatically create a self-chat for this workspace
+        const selfChat = new Chat({
+            chatname: req.user.name || 'Self Chat',
+            isGroup: false,
+            members: [req.user._id, req.user._id], // Self-chat with same user twice
+            workspace: workspace._id,
+        });
+        
+        await selfChat.save();
+        
+        // Create welcome message using the Message model imported at the top
+        
+        // Create welcome message in the self-chat
+        const welcomeMessage = new Message({
+            chat: selfChat._id,
+            sender: req.user._id,
+            content: `Welcome to ${workspace.name}! This is your personal chat in this workspace.`,
+        });
+        
+        await welcomeMessage.save();
+        
         res.status(201).json({ success: true, workspace });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -117,20 +141,63 @@ export const removeMemberFromWorkspace = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
 // In workspaceController.js (create this function)
 export const getMembersByWorkspaceId = async (req, res) => {
     const { id } = req.params;
+    const currentUserId = req.user._id;
   
     try {
-      const workspace = await Workspace.findById(id).populate('members'); // Assuming "members" is an array of User references
+      // Get the workspace with populated member information
+      const workspace = await Workspace.findById(id).populate({
+        path: 'members.userId',
+        select: 'name email avatar' // Select only fields you need
+      });
+      
       if (!workspace) {
         return res.status(404).json({ message: 'Workspace not found' });
       }
-      console.log("wrospace members are",workspace.members)
-  
-      res.json(workspace.members); // Return list of users
+
+      // Find all chats for this workspace
+      const workspaceChats = await Chat.find({ workspace: id })
+        .populate('members', 'name email avatar')
+        .lean();
+
+      // Transform the members data to include chat details
+      const membersWithChats = workspace.members.map(member => {
+        // Get basic member info
+        const memberInfo = {
+          _id: member.userId._id,
+          name: member.userId.name,
+          email: member.userId.email,
+          avatar: member.userId.avatar,
+          role: member.role
+        };
+        
+        // Find chat between current user and this member in this workspace
+        const memberChat = workspaceChats.find(chat => {
+          return (
+            !chat.isGroup && 
+            chat.members.some(m => m._id.toString() === member.userId._id.toString()) && 
+            chat.members.some(m => m._id.toString() === currentUserId.toString())
+          );
+        });
+        
+        // Include chat information if available
+        if (memberChat) {
+          memberInfo.chat = {
+            _id: memberChat._id,
+            chatname: memberChat.chatname || `Chat with ${memberInfo.name}`
+          };
+        }
+        
+        return memberInfo;
+      });
+      
+      console.log(`Found ${membersWithChats.length} members with their chat details in workspace ${id}`);
+      res.json(membersWithChats);
     } catch (error) {
-      res.status(500).json({ message: 'Server error', error });
+      console.error('Error fetching workspace members with chats:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
     }
   };
-      
