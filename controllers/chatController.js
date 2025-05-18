@@ -5,8 +5,7 @@ import { isValidObjectId } from 'mongoose';
 // Create or get a private chat between two users
 export const getOrCreatePrivateChat = async (req, res) => {
   try {
-    console.log('Fetching private chat...');
-    console.log('req.body:', req.body);
+
 
     let userId1, userId2;
     const { members, workspaceId, workspace } = req.body;
@@ -32,7 +31,6 @@ export const getOrCreatePrivateChat = async (req, res) => {
     const effectiveWorkspaceId = workspaceId || (workspace && workspace._id);
     const workspaceIdString = effectiveWorkspaceId ? effectiveWorkspaceId.toString() : null;
 
-    console.log(`Looking for existing private chat between ${userId1} and ${userId2} in workspace ${workspaceIdString}`);
 
     const userChats = await Chat.find({
       isGroup: false,

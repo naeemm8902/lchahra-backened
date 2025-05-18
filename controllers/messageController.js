@@ -1,4 +1,5 @@
 import Message from '../models/Message.js';
+import Chat from '../models/Chat.js';
 
 // Get all messages in a chat
 export const getChatMessages = async (req, res) => {
@@ -16,6 +17,16 @@ export const sendMessage = async (req, res) => {
     const { chatId, senderId, content, chatname } = req.body;
     const message = await Message.create({ chat: chatId, sender: senderId, content, chatname });
     const populated = await message.populate('sender', 'name');
+    
+    // Get Socket.io instance
+    const io = req.app.get('io');
+    
+    // Emit to all users in the chat room
+    if (io) {
+      io.to(chatId).emit('new-message', populated);
+      console.log(`Emitted new-message event to chat: ${chatId}`);
+    }
+    
     res.json(populated);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -49,6 +60,15 @@ export const updateMessage = async (req, res) => {
     await message.save();
     const updatedMessage = await Message.findById(messageId).populate('sender', 'name');
     
+    // Get Socket.io instance
+    const io = req.app.get('io');
+    
+    // Emit to all users in the chat room
+    if (io) {
+      io.to(message.chat.toString()).emit('updated-message', updatedMessage);
+      console.log(`Emitted updated-message event to chat: ${message.chat}`);
+    }
+    
     res.json(updatedMessage);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -73,8 +93,20 @@ export const deleteMessage = async (req, res) => {
       return res.status(403).json({ message: 'You can only delete your own messages' });
     }
     
+    // Store the chat ID before deletion for socket emission
+    const chatId = message.chat.toString();
+    
     // Delete the message
     await Message.findByIdAndDelete(messageId);
+    
+    // Get Socket.io instance
+    const io = req.app.get('io');
+    
+    // Emit to all users in the chat room
+    if (io) {
+      io.to(chatId).emit('deleted-message', { messageId });
+      console.log(`Emitted deleted-message event to chat: ${chatId}`);
+    }
     
     res.json({ message: 'Message deleted successfully', messageId });
   } catch (error) {
