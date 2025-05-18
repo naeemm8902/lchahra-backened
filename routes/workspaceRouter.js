@@ -8,7 +8,8 @@ import {
     updateWorkspace,
     deleteWorkspace,
     addMemberToWorkspace,
-    removeMemberFromWorkspace
+    removeMemberFromWorkspace,
+    getMembersByWorkspaceId
 } from '../controllers/workspaceController.js';
 const workspaceRouter = express.Router();
 
@@ -16,6 +17,7 @@ const workspaceRouter = express.Router();
 workspaceRouter.post('/', isAuthenticated,createWorkspace); // Create a new workspace
 workspaceRouter.get('/my-workspaces', isAuthenticated, getUserWorkspaces); // Get workspaces for the authenticated user
 workspaceRouter.get('my-workspces/:id',isAuthenticated ,getWorkspaceById); // Get a workspace by ID
+workspaceRouter.get('/:id/fetch-members', isAuthenticated, getMembersByWorkspaceId); // ✅ Get all users in a workspace
 
 
 
@@ -25,7 +27,6 @@ workspaceRouter.put('/:id', updateWorkspace); // Update a workspace
 workspaceRouter.delete('/:id', deleteWorkspace); // Delete a workspace
 workspaceRouter.post('/:id/members', addMemberToWorkspace); // Add a member to a workspace
 workspaceRouter.delete('/:id/members/:memberId', removeMemberFromWorkspace); // Remove a member from a workspace
-
 
 
 
