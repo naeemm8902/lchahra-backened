@@ -3,7 +3,9 @@ const { Schema, model } = mongoose;
 
 const columnSchema = new Schema(
   {
-    columnName: { type: String, required: true },
+    name: { type: String, required: true },
+    color:{type:String},
+    badgeText:{type:String},
     projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
     cardOrder: [{ type: Schema.Types.ObjectId, ref: 'Card' }],
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }
