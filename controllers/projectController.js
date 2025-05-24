@@ -53,8 +53,6 @@ export const createNewCard = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" })
   }
 }
-
-
 // List all projects where the user is a member
 export const listUserProjects = async (req, res) => {
   try {
@@ -115,5 +113,103 @@ export const changeTaskCol = async (req, res)=>{
     await cardModel.findByIdAndUpdate(_id, { $set: { columnId: columnId } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error'})
+  }
+}
+
+
+// __________________________________ New Code ______________________________________
+
+export const editColumn = async (req, res) => {
+  try {
+    const { columnId, name, color, badgeText } = req.body;
+    const updatedColumn = await columnModel.findByIdAndUpdate(
+      columnId,
+      { name, color, badgeText },
+      { new: true }
+    );
+    res.status(200).json(updatedColumn);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+export const editCard = async (req, res) => {
+  try {
+    const { cardId, title, description, dueDate } = req.body;
+    const updatedCard = await cardModel.findByIdAndUpdate(
+      cardId,
+      { title, description, dueDate },
+      { new: true }
+    );
+    res.status(200).json(updatedCard);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+export const addMemberToProject = async (req, res) => {
+  try {
+    const { projectId, userId } = req.body;
+    const updatedProject = await projectModel.findByIdAndUpdate(
+      projectId,
+      { $addToSet: { members: userId } }, // Use $addToSet to avoid duplicates
+      { new: true }
+    )
+    res.status(200).json(updatedProject);
+  }catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+export const editPorject = async (req, res) =>{
+  try {
+    const {projectId, projectName} = req.body;
+    const updatedProject = await projectModel.findByIdAndUpdate(
+      projectId,
+      { projectName },
+      { new: true }
+    )
+    res.status(200).json(updatedProject);
+  } catch (error) {
+      console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+export const deleteColumn = async (req, res) => {
+  try {
+    const { columnId } = req.params;
+    await columnModel.findByIdAndDelete(columnId);
+    await cardModel.deleteMany({ columnId }); // Delete all cards in the column
+    res.status(200).json({ success: true, message: 'Column deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+export const deleteCard = async (req, res) => {
+  try {
+    const { cardId } = req.params;
+    await cardModel.findByIdAndDelete(cardId);
+    res.status(200).json({ success: true, message: 'Card deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+export const deleteProject = async (req, res) => {
+  try {
+    const { projectId } = req.body;
+  const  del = await projectModel.findByIdAndDelete(projectId);
+  console.log(del)
+    await columnModel.deleteMany({ projectId }); // Delete all columns in the project
+    await cardModel.deleteMany({ projectId }); // Delete all cards in the project
+    res.status(200).json({ success: true, message: 'Project deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 }
