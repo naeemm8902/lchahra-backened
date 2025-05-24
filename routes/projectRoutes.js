@@ -12,7 +12,8 @@ import { createNewProject,
         editPorject,
         deleteColumn,
         deleteCard,
-        deleteProject
+        deleteProject,
+        removeMemberToProject
     } from "../controllers/projectController.js";
 
 const router = express.Router();
@@ -25,12 +26,13 @@ router.get('/list-project/:projectId', isAuthenticated, getProjectById)
 router.post('/change-task-col', isAuthenticated, changeTaskCol)
 router.post('/delete-project', isAuthenticated, deleteProject);
 router.post('/edit-project', isAuthenticated, editPorject);
-// new routes that are not integrated yet
+router.post('/delete-column', isAuthenticated, deleteColumn);
+router.post('/delete-card', isAuthenticated, deleteCard);
 router.post('/edit-column', isAuthenticated, editColumn);
 router.post('/edit-card', isAuthenticated, editCard);
 router.post('/add-member', isAuthenticated, addMemberToProject);
-router.post('/delete-column', isAuthenticated, deleteColumn);
-router.post('/delete-card', isAuthenticated, deleteCard);
+router.post('/remove-member', isAuthenticated, removeMemberToProject); // Assuming this is the same function for adding/removing members
+
 
 
 

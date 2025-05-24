@@ -116,9 +116,6 @@ export const changeTaskCol = async (req, res)=>{
   }
 }
 
-
-// __________________________________ New Code ______________________________________
-
 export const editColumn = async (req, res) => {
   try {
     const { columnId, name, color, badgeText } = req.body;
@@ -179,7 +176,7 @@ export const editPorject = async (req, res) =>{
 }
 export const deleteColumn = async (req, res) => {
   try {
-    const { columnId } = req.params;
+    const { columnId } = req.body;
     await columnModel.findByIdAndDelete(columnId);
     await cardModel.deleteMany({ columnId }); // Delete all cards in the column
     res.status(200).json({ success: true, message: 'Column deleted successfully' });
@@ -191,7 +188,7 @@ export const deleteColumn = async (req, res) => {
 
 export const deleteCard = async (req, res) => {
   try {
-    const { cardId } = req.params;
+    const { cardId } = req.body;
     await cardModel.findByIdAndDelete(cardId);
     res.status(200).json({ success: true, message: 'Card deleted successfully' });
   } catch (error) {
@@ -208,6 +205,20 @@ export const deleteProject = async (req, res) => {
     await columnModel.deleteMany({ projectId }); // Delete all columns in the project
     await cardModel.deleteMany({ projectId }); // Delete all cards in the project
     res.status(200).json({ success: true, message: 'Project deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+export const removeMemberToProject = async (req, res) => {
+  try {
+    const { projectId, userId } = req.body;
+    const updatedProject = await projectModel.findByIdAndUpdate(projectId,
+      { $pull: { members: userId } }, // Use $pull to remove the member
+      { new: true }
+    );
+    res.status(200).json(updatedProject);
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
