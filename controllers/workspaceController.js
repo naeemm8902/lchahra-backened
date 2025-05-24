@@ -146,7 +146,7 @@ export const removeMemberFromWorkspace = async (req, res) => {
 export const getMembersByWorkspaceId = async (req, res) => {
     const { id } = req.params;
     const currentUserId = req.user._id;
-  
+    console.log(`Fetching members for workspace ${id} for user ${currentUserId}`);
     try {
       // Get the workspace with populated member information
       const workspace = await Workspace.findById(id).populate({

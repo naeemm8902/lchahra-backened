@@ -170,7 +170,20 @@ export const acceptInvitation = async (req, res) => {
         return null;
       }
     });
+        // Create self-chat
+        const selfChat = await Chat.create({
+          isGroup: false,
+          members: [newUserId, newUserId],
+          workspace: workspaceId,
+          chatname: "Personal Notes"
+        });
 
+        await Message.create({
+          chat: selfChat._id,
+          sender: newUserId,
+          content: "Hi! This is your personal space. Feel free to write anything here!",
+          chatname: selfChat.chatname
+        });
     // Wait for all chat creation operations to complete
     const createdChats = await Promise.all(chatCreationPromises);
     const validChats = createdChats.filter(chat => chat !== null);
@@ -178,7 +191,7 @@ export const acceptInvitation = async (req, res) => {
     res.status(200).json({ 
       message: "Invitation accepted. New chats created with workspace members.", 
       invitation, 
-      chatsCreated: validChats.length
+      chatsCreated: validChats.length + 1 // +1 for self chat
     });
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });
