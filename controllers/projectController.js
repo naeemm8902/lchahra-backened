@@ -78,8 +78,15 @@ export const createNewCard = async (req, res) => {
 export const listUserProjects = async (req, res) => {
   try {
     const userId = req.user._id; // assuming user info is stored in req.user by isAuthenticated middleware
+    // console.log(req.params)
+    // console.log(req.query)
+    const {work} = req.query; // optional filter by workspace
+    if (!work) {
+      return res.status(400).json({ success: false, message: 'Workspace ID is required' });
+    }
+ 
 
-    const projects = await projectModel.find({})
+    const projects = await projectModel.find({ members: userId , projectWorkspaceId:work })
       .populate('projectWorkspaceId')
       .populate('columnOrder')
       .populate('members', 'name email') // optionally limit fields
