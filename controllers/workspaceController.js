@@ -5,7 +5,7 @@ import Message from '../models/Message.js';
 // Create a new workspace
 export const createWorkspace = async (req, res) => {
     try {
-        console.log(req.user)
+        // console.log(req.user)
         const { name, description} = req.body;
         // const workspace = new Workspace({ name, description, owner:req.user._id });
         const workspace = new Workspace({
@@ -55,7 +55,7 @@ export const getUserWorkspaces = async (req, res) => {
             .populate('owner', 'name email')
             .populate('members.userId', 'name email')
        
-        const guestWorkSpace = await Workspace.find({ members: { $elemMatch: { userId } } })
+        const guestWorkSpace = await Workspace.find({ members: { $elemMatch: { userId:userId, role: { $ne: 'owner' }  } } })
         .populate('owner', 'name email')
         .populate('members.userId', 'name email')
             res.status(200).json({ success: true, myWorkspaces ,guestWorkSpace });

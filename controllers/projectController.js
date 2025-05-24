@@ -1,24 +1,45 @@
-import projectModel from "../models/ProjectModel.js";
+import projectModel from "../models/projectModel.js";
 import columnModel from "../models/columnModel.js";
 import cardModel from "../models/cardModel.js";
 
+
 export const createNewProject = async (req, res) => {
-  // res.status(201).json({message:'working on it'})
   try {
-    console.log(req.body)
     const { projectName, projectWorkspaceId } = req.body;
+
+    // Step 1: Create the project
     const createdProject = await projectModel.create({
       projectName,
       projectWorkspaceId,
       createdBy: req.user._id,
       members: [req.user._id]
-    })
-    res.status(201).json(createdProject)
+    });
+
+    // Step 2: Create default columns
+    const defaultColumns = [
+      { name: "To do", badgeText: "To do", color: "bg-red-100 text-red-600" },
+      { name: "Pending", badgeText: "Pending", color: "bg-blue-100 text-blue-600" },
+      { name: "Done", badgeText: "Done", color: "bg-green-100 text-green-600" }
+    ];
+
+    // Map through and create each column
+    const columnPromises = defaultColumns.map(col =>
+      columnModel.create({
+        ...col,
+        projectId: createdProject._id,
+        createdBy: req.user._id
+      })
+    );
+
+    await Promise.all(columnPromises);
+
+    // Step 3: Respond with the created project
+    res.status(201).json(createdProject);
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ message: "Internal Server Error" })
+    console.log(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
 export const createNewColumn = async (req, res) => {
   // console.log(req.body)
