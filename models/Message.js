@@ -32,9 +32,17 @@ const messageSchema = new Schema(
       required: true,
       trim: true,
     },
-    // Optional: Attachments (images, files, etc.)
+    // Attachments (documents, images, etc.)
     attachment: {
-      type: String, // URL or file path to the attachment
+      filename: String,        // Original filename
+      path: String,            // Server path where file is stored
+      mimetype: String,        // MIME type of the file
+      size: Number,            // File size in bytes
+      downloadUrl: String,     // URL for downloading the file
+      uploadDate: {
+        type: Date,
+        default: Date.now
+      }
     },
     // Track if message has been edited
     isEdited: {

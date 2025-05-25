@@ -1,5 +1,7 @@
 import Message from '../models/Message.js';
 import Chat from '../models/Chat.js';
+import path from 'path';
+import fs from 'fs';
 
 // Get all messages in a chat
 export const getChatMessages = async (req, res) => {
@@ -14,21 +16,73 @@ export const getChatMessages = async (req, res) => {
 // Send a message
 export const sendMessage = async (req, res) => {
   try {
+    console.log('Received message request with files:', req.file ? 'HAS FILE' : 'NO FILE');
+    console.log('Request body:', req.body);
+    console.log('Request files:', req.files);
+    
     const { chatId, senderId, content, chatname } = req.body;
-    const message = await Message.create({ chat: chatId, sender: senderId, content, chatname });
-    const populated = await message.populate('sender', 'name');
     
-    // Get Socket.io instance
+    // Create message object
+    const messageData = { 
+      chat: chatId, 
+      sender: senderId, 
+      content, 
+      chatname,
+      messageType: 'direct' // Explicitly set message type for direct messages
+    };
+    
+    // ===== HANDLING FILE ATTACHMENTS =====
+    if (req.file) {
+      // Get just the filename from the path
+      const filename = path.basename(req.file.path);
+      console.log(`Handling file upload: ${filename}`);
+      
+      // Create complete attachment object
+      const attachmentData = {
+        filename: req.file.originalname,
+        path: req.file.path,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        downloadUrl: `/chat/download/${filename}`,
+        uploadDate: new Date()
+      };
+      
+      // Add to message data
+      messageData.attachment = attachmentData;
+      
+      console.log('ATTACHMENT DATA:', JSON.stringify(attachmentData, null, 2));
+    }
+    
+    // ===== CREATE THE MESSAGE =====
+    console.log('Creating message with data:', JSON.stringify(messageData, null, 2));
+    const message = await Message.create(messageData);
+    
+    // ===== PREPARE RESPONSE =====
+    // First populate the sender
+    let populated = await message.populate('sender', 'name');
+    
+    // Convert to plain object for response
+    const responseObj = populated.toObject();
+    
+    // Check if attachment needs to be fixed
+    if (req.file && (!responseObj.attachment || !responseObj.attachment.downloadUrl)) {
+      console.log('Fixing attachment in response');
+      responseObj.attachment = messageData.attachment;
+    }
+    
+    console.log('FINAL RESPONSE:', JSON.stringify(responseObj, null, 2));
+    
+    // ===== EMIT SOCKET EVENT =====
     const io = req.app.get('io');
-    
-    // Emit to all users in the chat room
     if (io) {
-      io.to(chatId).emit('new-message', populated);
+      io.to(chatId).emit('new-message', responseObj);
       console.log(`Emitted new-message event to chat: ${chatId}`);
     }
     
-    res.json(populated);
+    // ===== SEND RESPONSE =====
+    return res.status(200).json(responseObj);
   } catch (error) {
+    console.error('Error sending message:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
