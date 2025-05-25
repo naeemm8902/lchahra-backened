@@ -502,7 +502,6 @@ const setupSocketServer = (httpServer) => {
       }
     });
   });
-
   return io;
 };
 

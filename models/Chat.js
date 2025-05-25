@@ -41,6 +41,11 @@ const chatSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Workspace',
     },
+    // Reference to the group this chat is associated with (for group chats)
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Group',
+    },
   },
   { timestamps: true },
 );

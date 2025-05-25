@@ -279,9 +279,34 @@ export const removeGroupMember = async (req, res) => {
       });
     }
 
-    // Remove the member
+    // Remove the member from the group
     group.members.splice(memberIndex, 1);
     await group.save();
+    
+    // Also remove the user from the associated chat
+    const associatedChat = await Chat.findOne({ groupId: groupId });
+    if (associatedChat) {
+      console.log(`Removing user ${userId} from chat ${associatedChat._id} associated with group ${groupId}`);
+      
+      // Pull the user from the chat members array
+      await Chat.updateOne(
+        { _id: associatedChat._id },
+        { $pull: { members: userId } }
+      );
+      
+      // Add a system message that the user was removed
+      const systemMessage = new Message({
+        content: `User was removed from the group`,
+        sender: req.user._id,
+        chat: associatedChat._id,
+        messageType: 'system',
+        isSystemMessage: true
+      });
+      
+      await systemMessage.save();
+    } else {
+      console.log(`No chat found associated with group ${groupId}`);
+    }
 
     // Emit socket event for member removal
     req.app.get('io').to(`group_${groupId}`).emit('group:member_removed', {
@@ -508,7 +533,9 @@ export const updateGroupInfo = async (req, res) => {
 // @access  Private
 export const leaveGroup = async (req, res) => {
   try {
+    console.log("leaveGroup valounter by user itself")
     const { groupId } = req.params;
+    console.log(groupId)
     const userId = req.user._id;
 
     const group = await Group.findOne({
@@ -532,11 +559,30 @@ export const leaveGroup = async (req, res) => {
         m.user.toString() === userId.toString() && m.role === 'admin'
       );
 
+    // If the last admin is leaving, transfer admin role to another member
     if (isLastAdmin) {
-      return res.status(400).json({
-        success: false,
-        message: 'You are the last admin. Please assign another admin before leaving or delete the group.'
-      });
+      // If there are other members, transfer admin to the first one
+      if (group.members.length > 1) {
+        // Find the first non-admin member
+        const newAdminIndex = group.members.findIndex(m => 
+          m.user.toString() !== userId.toString()
+        );
+        
+        if (newAdminIndex !== -1) {
+          console.log(`Last admin is leaving - transferring admin role to ${group.members[newAdminIndex].user}`);
+          group.members[newAdminIndex].role = 'admin';
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'You are the last admin. Please assign another admin before leaving or delete the group.'
+          });
+        }
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'You are the last admin and member. Please delete the group instead of leaving it.'
+        });
+      }
     }
 
     // Remove user from group
@@ -545,11 +591,41 @@ export const leaveGroup = async (req, res) => {
     );
 
     await group.save();
+    
+    // Also remove the user from the associated chat
+    const associatedChat = await Chat.findOne({ groupId: groupId });
+    if (associatedChat) {
+      console.log(`User ${userId} is leaving chat ${associatedChat._id} associated with group ${groupId}`);
+      
+      // Pull the user from the chat members array
+      await Chat.updateOne(
+        { _id: associatedChat._id },
+        { $pull: { members: userId } }
+      );
+      
+      // Add a system message that the user left
+      const userName = req.user.name || 'A user';
+      const systemMessage = new Message({
+        content: `${userName} has left the group`,
+        sender: userId,
+        chat: associatedChat._id,
+        messageType: 'group',
+        isSystemMessage: true
+      });
+      
+      await systemMessage.save();
+    } else {
+      console.log(`No chat found associated with group ${groupId} when user tried to leave`);
+    }
 
-    // Emit socket event
-    req.app.get('io').to(`group_${groupId}`).emit('group:member_left', {
+    // Emit socket event using the existing socket infrastructure
+    req.app.get('io').to(`group_${groupId}`).emit('user-left-group', {
       groupId,
-      userId
+      userId,
+      socketId: req.socket?.id, // Include socketId if available
+      timestamp: new Date(),
+      isLeaving: true, // Add flag to indicate permanent leave (not just socket disconnect)
+      userName: req.user.name || 'A user' // Include user name for better UI messages
     });
 
     res.status(200).json({
