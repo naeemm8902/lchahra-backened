@@ -5,7 +5,7 @@ import Message from '../models/Message.js';
 // Create a new workspace
 export const createWorkspace = async (req, res) => {
     try {
-        console.log(req.user)
+        // console.log(req.user)
         const { name, description} = req.body;
         // const workspace = new Workspace({ name, description, owner:req.user._id });
         const workspace = new Workspace({
@@ -55,7 +55,7 @@ export const getUserWorkspaces = async (req, res) => {
             .populate('owner', 'name email')
             .populate('members.userId', 'name email')
        
-        const guestWorkSpace = await Workspace.find({ members: { $elemMatch: { userId } } })
+        const guestWorkSpace = await Workspace.find({ members: { $elemMatch: { userId:userId, role: { $ne: 'owner' }  } } })
         .populate('owner', 'name email')
         .populate('members.userId', 'name email')
             res.status(200).json({ success: true, myWorkspaces ,guestWorkSpace });
@@ -64,15 +64,6 @@ export const getUserWorkspaces = async (req, res) => {
     }
 }
 
-// Get all workspaces
-export const getWorkspaces = async (req, res) => {
-    try {
-        const workspaces = await Workspace.find().populate('owner').populate('members.userId');
-        res.status(200).json({ success: true, workspaces });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
 
 // Get a single workspace by ID
 export const getWorkspaceById = async (req, res) => {
@@ -85,16 +76,6 @@ export const getWorkspaceById = async (req, res) => {
     }
 };
 
-// Update a workspace
-export const updateWorkspace = async (req, res) => {
-    try {
-        const workspace = await Workspace.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!workspace) return res.status(404).json({ success: false, message: 'Workspace not found' });
-        res.status(200).json({ success: true, workspace });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
 
 // Delete a workspace
 export const deleteWorkspace = async (req, res) => {
@@ -107,34 +88,17 @@ export const deleteWorkspace = async (req, res) => {
     }
 };
 
-// Add a member to a workspace
-export const addMemberToWorkspace = async (req, res) => {
-    try {
-        const { userId, role } = req.body;
-        const workspace = await Workspace.findById(req.params.id);
-        if (!workspace) return res.status(404).json({ success: false, message: 'Workspace not found' });
-        
-        // Check if user is already a member
-        if (workspace.members.some(member => member.userId.toString() === userId)) {
-            return res.status(400).json({ success: false, message: 'User is already a member' });
-        }
-
-        workspace.members.push({ userId, role });
-        await workspace.save();
-        res.status(200).json({ success: true, message: 'Member added successfully', workspace });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
 
 // Remove a member from a workspace
 export const removeMemberFromWorkspace = async (req, res) => {
     try {
-        const { id, memberId } = req.params;
-        const workspace = await Workspace.findById(id);
+        const { workspaceId, memberId } = req.params;
+        const workspace = await Workspace.findById(workspaceId);
         if (!workspace) return res.status(404).json({ success: false, message: 'Workspace not found' });
         
-        workspace.members = workspace.members.filter(member => member.userId.toString() !== memberId);
+        workspace.members = workspace.members.filter(member => member._id.toString() !== memberId);
+        console.log(`Removing member ${memberId} from workspace ${workspaceId}`);
+        console.log(workspace)
         await workspace.save();
         res.status(200).json({ success: true, message: 'Member removed successfully', workspace });
     } catch (error) {
@@ -142,62 +106,30 @@ export const removeMemberFromWorkspace = async (req, res) => {
     }
 };
 
-// In workspaceController.js (create this function)
-export const getMembersByWorkspaceId = async (req, res) => {
-    const { id } = req.params;
-    const currentUserId = req.user._id;
-    console.log(`Fetching members for workspace ${id} for user ${currentUserId}`);
+
+  export const changeMemberRole = async (req, res) => {
+    const { workspaceId, memberId } = req.params;
+    const { role } = req.body; // Expecting new role in request body
+
     try {
-      // Get the workspace with populated member information
-      const workspace = await Workspace.findById(id).populate({
-        path: 'members.userId',
-        select: 'name email avatar' // Select only fields you need
-      });
-      
-      if (!workspace) {
-        return res.status(404).json({ message: 'Workspace not found' });
+      if (!['collaborator', 'member'].includes(role)) {
+        return res.status(400).json({ success: false, message: 'Invalid role specified' });
       }
-
-      // Find all chats for this workspace
-      const workspaceChats = await Chat.find({ workspace: id })
-        .populate('members', 'name email avatar')
-        .lean();
-
-      // Transform the members data to include chat details
-      const membersWithChats = workspace.members.map(member => {
-        // Get basic member info
-        const memberInfo = {
-          _id: member.userId._id,
-          name: member.userId.name,
-          email: member.userId.email,
-          avatar: member.userId.avatar,
-          role: member.role
-        };
-        
-        // Find chat between current user and this member in this workspace
-        const memberChat = workspaceChats.find(chat => {
-          return (
-            !chat.isGroup && 
-            chat.members.some(m => m._id.toString() === member.userId._id.toString()) && 
-            chat.members.some(m => m._id.toString() === currentUserId.toString())
-          );
-        });
-        
-        // Include chat information if available
-        if (memberChat) {
-          memberInfo.chat = {
-            _id: memberChat._id,
-            chatname: memberChat.chatname || `Chat with ${memberInfo.name}`
-          };
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return res.status(404).json({ success: false, message: 'Workspace not found' });
         }
-        
-        return memberInfo;
-      });
-      
-      console.log(`Found ${membersWithChats.length} members with their chat details in workspace ${id}`);
-      res.json(membersWithChats);
-    } catch (error) {
-      console.error('Error fetching workspace members with chats:', error);
-      res.status(500).json({ message: 'Server error', error: error.message });
+        const member = workspace.members.find(m => m._id.toString() === memberId);
+        if (!member) {
+            return res.status(404).json({ success: false, message: 'Member not found in this workspace' });
+        }
+        // Update the member's role
+        member.role = role;
+        await workspace.save();
+        res.status(200).json({ success: true, message: 'Member role updated successfully', workspace });
     }
-  };
+    catch (error) {
+        console.error('Error changing member role:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
