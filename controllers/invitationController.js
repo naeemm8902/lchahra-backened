@@ -63,7 +63,11 @@ export const sendInvitation = async (req, res) => {
 // 📌 Get all invitations
 export const getAllInvitations = async (req, res) => {
   try {
-    const invitations = await InvitationToWorkspace.find().populate("invitedBy", "name email").populate("invitedWorkspace", "name");
+    const { workspaceId } = req.query;
+    if (!workspaceId) {
+      return res.status(400).json({ message: "Workspace ID is required." });
+    }
+    const invitations = await InvitationToWorkspace.find({invitedWorkspace:workspaceId}).populate("invitedBy", "name email").populate("invitedWorkspace", "name");
     res.status(200).json(invitations);
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });

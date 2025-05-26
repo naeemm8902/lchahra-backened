@@ -3,13 +3,10 @@ import { isAuthenticated } from '../middleware/authMiddleware.js';
 import {
     createWorkspace,
     getUserWorkspaces,
-    getWorkspaces,
     getWorkspaceById,
-    updateWorkspace,
     deleteWorkspace,
-    addMemberToWorkspace,
+    changeMemberRole,
     removeMemberFromWorkspace,
-    getMembersByWorkspaceId
 } from '../controllers/workspaceController.js';
 const workspaceRouter = express.Router();
 
@@ -17,16 +14,9 @@ const workspaceRouter = express.Router();
 workspaceRouter.post('/', isAuthenticated,createWorkspace); // Create a new workspace
 workspaceRouter.get('/my-workspaces', isAuthenticated, getUserWorkspaces); // Get workspaces for the authenticated user
 workspaceRouter.get('my-workspces/:id',isAuthenticated ,getWorkspaceById); // Get a workspace by ID
-workspaceRouter.get('/:id/fetch-members', isAuthenticated, getMembersByWorkspaceId); // ✅ Get all users in a workspace
-workspaceRouter.delete('/:id',isAuthenticated ,deleteWorkspace); // Delete a workspace
-
-
-// not used yet
-workspaceRouter.get('/', getWorkspaces); // Get all workspaces
-workspaceRouter.put('/:id', updateWorkspace); // Update a workspace
-
-workspaceRouter.post('/:id/members', addMemberToWorkspace); // Add a member to a workspace
-workspaceRouter.delete('/:id/members/:memberId', removeMemberFromWorkspace); // Remove a member from a workspace
+workspaceRouter.delete('/:id',isAuthenticated ,deleteWorkspace); 
+workspaceRouter.post('/change-role/:workspaceId/:memberId',isAuthenticated, changeMemberRole); // Remove a member from a workspace
+workspaceRouter.delete('/remove-member/:workspaceId/:memberId',isAuthenticated, removeMemberFromWorkspace); // Remove a member from a workspace
 
 
 
