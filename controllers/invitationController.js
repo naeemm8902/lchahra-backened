@@ -1,4 +1,4 @@
-import InvitationToWorkspace from "../models/InvitationToWorkspace.js";
+import InvitationToWorkspace from "../models/invitationToWorkspace.js";
 import Workspace from "../models/workspaceModel.js";
 import Chat from "../models/Chat.js";
 import Message from "../models/Message.js";
@@ -21,6 +21,7 @@ export const sendInvitation = async (req, res) => {
       const existingInvitation = await InvitationToWorkspace.findOne({
         email: email.toLowerCase(),
         invitedWorkspace,
+         
       });
 
       // ⛔ Skip if already invited
@@ -223,7 +224,7 @@ export const deleteInvitation = async (req, res) => {
 export const getJoinRequest = async (req, res) =>{
   // console.log('hello from join request')
   try {
-    const invitations = await InvitationToWorkspace.find({email:req.user.email}).sort({created:-1})
+    const invitations = await InvitationToWorkspace.find({email:req.user.email}).sort({created:-1}).populate("invitedBy", "name").populate("invitedWorkspace", "name");
     return res.status(200).json(invitations)
   } catch (error) {
     console.log(error)

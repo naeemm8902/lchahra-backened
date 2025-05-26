@@ -18,13 +18,13 @@ workspaceRouter.post('/', isAuthenticated,createWorkspace); // Create a new work
 workspaceRouter.get('/my-workspaces', isAuthenticated, getUserWorkspaces); // Get workspaces for the authenticated user
 workspaceRouter.get('my-workspces/:id',isAuthenticated ,getWorkspaceById); // Get a workspace by ID
 workspaceRouter.get('/:id/fetch-members', isAuthenticated, getMembersByWorkspaceId); // ✅ Get all users in a workspace
-
+workspaceRouter.delete('/:id',isAuthenticated ,deleteWorkspace); // Delete a workspace
 
 
 // not used yet
 workspaceRouter.get('/', getWorkspaces); // Get all workspaces
 workspaceRouter.put('/:id', updateWorkspace); // Update a workspace
-workspaceRouter.delete('/:id', deleteWorkspace); // Delete a workspace
+
 workspaceRouter.post('/:id/members', addMemberToWorkspace); // Add a member to a workspace
 workspaceRouter.delete('/:id/members/:memberId', removeMemberFromWorkspace); // Remove a member from a workspace
 
