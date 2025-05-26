@@ -10,6 +10,7 @@ import projectRoutes from './routes/projectRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import setupSocketServer from './socketServer.js';
+import groupRoutes from './routes/groupRoutes.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -32,6 +33,7 @@ app.use('/api/project', projectRoutes);
 // making routes for chat and message
 app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/groups', groupRoutes);  
 
 // Connect to MongoDB
 connectToMongo(port);

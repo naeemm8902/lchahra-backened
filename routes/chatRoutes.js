@@ -1,4 +1,6 @@
 import express from 'express';
+import path from 'path';
+import fs from 'fs';
 import {
   getOrCreatePrivateChat,
   getUserChats,
@@ -7,8 +9,9 @@ import {
   acceptInvitation,
   rejectInvitation,
 } from '../controllers/chatController.js';
-import { getChatMessages } from '../controllers/messageController.js';
+import { getChatMessages, sendMessage } from '../controllers/messageController.js';
 import { isAuthenticated } from '../middleware/authMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 const chatRouter = express.Router();
 
@@ -35,6 +38,29 @@ chatRouter.put('/invite/:id/reject', isAuthenticated, rejectInvitation);
 
 // Get all messages for a specific chat (matches frontend expected endpoint)
 chatRouter.get('/:chatId/messages', isAuthenticated, getChatMessages);
+
+// Send a message with optional file attachment
+chatRouter.post('/:chatId/messages', isAuthenticated, upload.single('document'), sendMessage);
+
+// Download a file attachment
+// Using the path format that matches what we set in messageController.js
+chatRouter.get('/download/:filename', isAuthenticated, (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filePath = path.join(process.cwd(), 'uploads', filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    // Send the file
+    res.download(filePath);
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 // // DM messages - Direct Message routes
 // router.post('/dm/:chatId', isAuthenticated, sendDirectMessage);
