@@ -5,44 +5,48 @@ import Message from '../models/Message.js';
 // Create a new workspace
 export const createWorkspace = async (req, res) => {
     try {
-        // console.log(req.user)
-        const { name, description} = req.body;
-        // const workspace = new Workspace({ name, description, owner:req.user._id });
-        const workspace = new Workspace({
-            name,
-            description,
-            owner: req.user._id,
-            members: [
-              {
-                userId: req.user._id,
-                role: 'owner', 
-              },
-            ],
-          });
-        await workspace.save();
+      console.log('user is', req.user);
+      const { name, description } = req.body;
+      // const workspace = new Workspace({ name, description, owner:req.user._id });
+      const workspace = new Workspace({
+        name,
+        description,
+        owner: req.user._id,
+        members: [
+          {
+            userId: req.user._id,
+            role: 'owner',
+          },
+        ],
+      });
+      await workspace.save();
+      console.log('1');
+      // Automatically create a self-chat for this workspace
+      const selfChat = new Chat({
+        chatname: req.user.name || 'Self Chat',
+        isGroup: false,
+        members: [req.user._id, req.user._id], // Self-chat with same user twice
+        workspace: workspace._id,
+      });
+      console.log('2');
 
-        // Automatically create a self-chat for this workspace
-        const selfChat = new Chat({
-            chatname: req.user.name || 'Self Chat',
-            isGroup: false,
-            members: [req.user._id, req.user._id], // Self-chat with same user twice
-            workspace: workspace._id,
-        });
-        
-        await selfChat.save();
-        
-        // Create welcome message using the Message model imported at the top
-        
-        // Create welcome message in the self-chat
-        const welcomeMessage = new Message({
-            chat: selfChat._id,
-            sender: req.user._id,
-            content: `Welcome to ${workspace.name}! This is your personal chat in this workspace.`,
-        });
-        
-        await welcomeMessage.save();
-        
-        res.status(201).json({ success: true, workspace });
+      await selfChat.save();
+
+      // Create welcome message using the Message model imported at the top
+
+      // Create welcome message in the self-chat
+      const welcomeMessage = new Message({
+        chat: selfChat._id,
+        sender: req.user._id,
+        content: `Welcome to ${workspace.name}! This is your personal chat in this workspace.`,
+        messageType: 'direct',
+      });
+      console.log('3');
+
+      await welcomeMessage.save();
+      console.log('4');
+
+      res.status(201).json({ success: true, workspace });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
