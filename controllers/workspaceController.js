@@ -130,3 +130,61 @@ export const removeMemberFromWorkspace = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 }
+export const getMembersByWorkspaceId = async (req, res) => {
+  const { id } = req.params;
+  const currentUserId = req.user._id;
+  console.log(`Fetching members for workspace ${id} for user ${currentUserId}`);
+  try {
+    // Get the workspace with populated member information
+    const workspace = await Workspace.findById(id).populate({
+      path: 'members.userId',
+      select: 'name email avatar' // Select only fields you need
+    });
+    
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found' });
+    }
+
+    // Find all chats for this workspace
+    const workspaceChats = await Chat.find({ workspace: id })
+      .populate('members', 'name email avatar')
+      .lean();
+
+    // Transform the members data to include chat details
+    const membersWithChats = workspace.members.map(member => {
+      // Get basic member info
+      const memberInfo = {
+        _id: member.userId._id,
+        name: member.userId.name,
+        email: member.userId.email,
+        avatar: member.userId.avatar,
+        role: member.role
+      };
+      
+      // Find chat between current user and this member in this workspace
+      const memberChat = workspaceChats.find(chat => {
+        return (
+          !chat.isGroup && 
+          chat.members.some(m => m._id.toString() === member.userId._id.toString()) && 
+          chat.members.some(m => m._id.toString() === currentUserId.toString())
+        );
+      });
+      
+      // Include chat information if available
+      if (memberChat) {
+        memberInfo.chat = {
+          _id: memberChat._id,
+          chatname: memberChat.chatname || `Chat with ${memberInfo.name}`
+        };
+      }
+      
+      return memberInfo;
+    });
+    
+    console.log(`Found ${membersWithChats.length} members with their chat details in workspace ${id}`);
+    res.json(membersWithChats);
+  } catch (error) {
+    console.error('Error fetching workspace members with chats:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

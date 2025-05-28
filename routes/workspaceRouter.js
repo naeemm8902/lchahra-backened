@@ -7,6 +7,7 @@ import {
     deleteWorkspace,
     changeMemberRole,
     removeMemberFromWorkspace,
+    getMembersByWorkspaceId,
 } from '../controllers/workspaceController.js';
 const workspaceRouter = express.Router();
 
@@ -17,6 +18,7 @@ workspaceRouter.get('my-workspces/:id',isAuthenticated ,getWorkspaceById); // Ge
 workspaceRouter.delete('/:id',isAuthenticated ,deleteWorkspace); 
 workspaceRouter.post('/change-role/:workspaceId/:memberId',isAuthenticated, changeMemberRole); // Remove a member from a workspace
 workspaceRouter.delete('/remove-member/:workspaceId/:memberId',isAuthenticated, removeMemberFromWorkspace); // Remove a member from a workspace
+workspaceRouter.get('/:id/fetch-members', isAuthenticated, getMembersByWorkspaceId); // ✅ Get all users in a workspace
 
 
 
