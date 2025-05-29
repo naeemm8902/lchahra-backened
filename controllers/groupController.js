@@ -641,3 +641,40 @@ export const leaveGroup = async (req, res) => {
     });
   }
 };
+// @desc    Get admin(s) of a group
+// @route   GET /api/groups/:groupId/admins
+// @access  Private
+export const getGroupAdmins = async (req, res) => {
+  try {
+    console.log("getGroupAdmins valounter")
+    const group = await Group.findOne({
+      _id: req.params.groupId,
+      'createdBy': req.user._id,
+      isArchived: false,
+    }).populate('members.user', 'name email avatar');
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: 'Group not found or access denied',
+      });
+    }
+
+    // Filter admin users
+    const admins = group.members
+      .filter(member => member.role === 'admin')
+      .map(member => member.user);
+
+    res.status(200).json({
+      success: true,
+      data: admins,
+    });
+  } catch (error) {
+    console.error('Error fetching group admins:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};

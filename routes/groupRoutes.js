@@ -1,5 +1,5 @@
 import express from 'express';
-import {createGroup, getUserGroups, getGroupDetails, addGroupMembers, removeGroupMember, leaveGroup, sendGroupMessage, getGroupMessages} from '../controllers/groupController.js';
+import {createGroup, getUserGroups, getGroupDetails, addGroupMembers, removeGroupMember, leaveGroup, sendGroupMessage, getGroupMessages, getGroupAdmins} from '../controllers/groupController.js';
 import { isAuthenticated } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -26,7 +26,7 @@ router.post('/:groupId/messages', isAuthenticated, sendGroupMessage);
 // Get group messages
 router.get('/:groupId/messages', isAuthenticated, getGroupMessages);
 
-// Leave group
-router.post('/:groupId/leave', isAuthenticated, leaveGroup);
+// get admin details 
+router.get('/:groupId/admins', isAuthenticated, getGroupAdmins);
 
 export default router;
