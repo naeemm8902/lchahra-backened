@@ -8,15 +8,24 @@ import {
   loginWithCode,
   sendLoginCode,
   refreshToken,
+  changePassword,
 } from '../controllers/userController.js';
+import { isAuthenticated } from '../middleware/authMiddleware.js';
 const usersRouter = express.Router();
 
-usersRouter.route('/').get(getAllUsers).post(createUser);
-
+usersRouter.route('/')
+.post(createUser)
+.get(getAllUsers);
+// usersRouter.route('/update/changeusername').post(isAuthenticated, updateUser);
+usersRouter.route('/update/user-name').post(isAuthenticated, updateUser)
 // Routes for a single user by ID
 usersRouter.route('/login/sendcode').post(sendLoginCode);
 usersRouter.route('/login/loginwithcode').post(loginWithCode);
 usersRouter.route('/refreshtoken').post(refreshToken);
-usersRouter.route('/:id').get(getAUser).patch(updateUser).delete(deleteUser);
+usersRouter.route('/changepassword').post(isAuthenticated, changePassword);
+usersRouter.route('/get-user-deails').get(isAuthenticated, getAUser)
+usersRouter.route('/:id')
+.get(getAUser)
+.delete(deleteUser);
 
 export default usersRouter;

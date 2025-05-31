@@ -15,7 +15,7 @@ const getAllUsers = async (req, res) => {
 
 const getAUser = async (req, res) => {
   try {
-    const user = await UserModel.findById(req.params.id);
+    const user = await UserModel.findById(req.user._id).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -74,8 +74,11 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const updatedUser = await UserModel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
+      req.user._id,
+      {
+        name: req.body.name,
+      },
+
       { new: true, runValidators: true },
     );
     if (!updatedUser) {
@@ -211,8 +214,8 @@ const loginWithCode = async (req, res) => {
       { expiresIn: '8h' },
     );
 
-    await VerificationCodeModel.updateMany({userId:verificationEntry.userId , isUsed:false}, {
-      $set:{isUsed: true},
+    await VerificationCodeModel.updateMany({ userId: verificationEntry.userId, isUsed: false }, {
+      $set: { isUsed: true },
     });
 
     // Update user verification status and store refresh token
@@ -234,6 +237,37 @@ const loginWithCode = async (req, res) => {
 const refreshToken = (req, res) => {
   res.json({ message: 'message resived' });
 };
+
+const changePassword = async (req, res) => {
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+  if (!oldPassword || !newPassword || !confirmPassword) {
+    return res.status(400).json({ message: 'All fields are required.' });
+  }
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ message: 'Passwords do not match.' });
+  }
+  try {
+    const user = await UserModel.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect old password.' });
+    }
+
+    // const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'An error occurred while changing the password.' });
+  }
+}
+
 export {
   getAllUsers,
   getAUser,
@@ -243,4 +277,5 @@ export {
   sendLoginCode,
   loginWithCode,
   refreshToken,
+  changePassword
 };
